@@ -1,7 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
     <apiVersion>64.0</apiVersion>
     <isExposed>true</isExposed>
     <masterLabel>Compliance Checker Card LWC</masterLabel>
-    <!-- TODO FOR THE CHALLENGE: Define the target to expose this component to Agentforce Custom Lightning Types  -->
+    <!-- Exposed to Agentforce Custom Lightning Types via lightning__AgentforceOutput -->
+    <targets>
+        <target>lightning__AgentforceOutput</target>
+    </targets>
+
 </LightningComponentBundle>

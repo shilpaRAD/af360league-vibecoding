@@ -3,4 +3,3 @@
  */
 global class ComplianceException extends Exception {
 }
-

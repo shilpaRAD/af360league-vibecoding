@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<LightningTypeBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>64.0</apiVersion>
+    <masterLabel>Compliance Result</masterLabel>
+    <description>Agentforce Compliance Card Renderer</description>
+    <targets>
+        <target>lightning__AgentforceOutput</target>
+    </targets>
+</LightningTypeBundle>

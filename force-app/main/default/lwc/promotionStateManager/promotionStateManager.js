@@ -1,79 +1,118 @@
-//TODO FOR THE CHALLENGE: Import the module for the State Management
+// Use the LWC state utilities when available; provide lightweight fallbacks for older runtimes
+import {
+  defineState as lwcDefineState,
+  atom as lwcAtom,
+  compute as lwcCompute,
+  setAtom as lwcSetAtom
+} from "@lwc/state";
 
-const promotionStateManager = defineState(
-  ({ /** TODO FOR THE CHALLENGE: add the required properties here */ }) => {
-
-    // TODO FOR THE CHALLENGE: Create a state property of type string to store promotion name
-    const promotionName;
-    
-
-    // TODO FOR THE CHALLENGE: Create a state property of type array to store products
-    const chosenProducts;
-
-    const chosenStores = atom([]);
-
-    // Add or update a product with discount
-    const setProduct = (product) => {
-        let chosenProductsTemp = [...chosenProducts.value];
-        const existingIndex = chosenProductsTemp.findIndex(p => p.productId === product.productId);
-        if (existingIndex >= 0) {
-            chosenProductsTemp[existingIndex] = { ...chosenProductsTemp[existingIndex], ...product };
-        } else {
-            chosenProductsTemp.push(product);
+// Provide safe fallbacks when the runtime does not expose @lwc/state
+const atom =
+  typeof lwcAtom === "function" ? lwcAtom : (initial) => ({ value: initial });
+const setAtom =
+  typeof lwcSetAtom === "function"
+    ? lwcSetAtom
+    : (a, v) => {
+        a.value = v;
+      };
+const compute =
+  typeof lwcCompute === "function"
+    ? lwcCompute
+    : (fn) => ({
+        get value() {
+          return fn();
         }
-        
-        // TODO FOR THE CHALLENGE: set the value of chosenProducts with the chosenProductsTemp
-        
-    };
+      });
 
-    // Remove a product by ID
-    const removeProduct = (productId) => {
-        let chosenProductsTemp = chosenProducts.value.filter(p => p.productId !== productId);
-        setAtom(chosenProducts, chosenProductsTemp);
-    };
+const defineState =
+  typeof lwcDefineState === "function"
+    ? lwcDefineState
+    : (initFn) => {
+        // Simple factory that returns a singleton per initFn (mimics @lwc/state behavior)
+        let instance;
+        return () => {
+          if (!instance) {
+            instance = initFn();
+          }
+          return instance;
+        };
+      };
 
-    // Bulk update products (replaces entire selection)
-    const updateProducts = (products) => {
-        setAtom(chosenProducts, [...products]);
-    };
+const promotionStateManager = defineState(() => {
+  const promotionName = atom("");
+  const chosenProducts = atom([]);
+  const chosenStores = atom([]);
 
-    // Check if a product is selected
-    const isProductSelected = (productId) => {
-        return chosenProducts.value.some(p => p.productId === productId);
-    };
+  const setProduct = (product) => {
+    let chosenProductsTemp = [...(chosenProducts.value || chosenProducts)];
+    const existingIndex = chosenProductsTemp.findIndex(
+      (existingProduct) => existingProduct.productId === product.productId
+    );
+    if (existingIndex >= 0) {
+      chosenProductsTemp[existingIndex] = {
+        ...chosenProductsTemp[existingIndex],
+        ...product
+      };
+    } else {
+      chosenProductsTemp.push(product);
+    }
+    setAtom(chosenProducts, chosenProductsTemp);
+  };
 
-    // Get discount for a product
-    const getProductDiscount = (productId) => {
-        const product = chosenProducts.value.find(p => p.productId === productId);
-        return product ? product.discountPercent : 0;
-    };
+  const productCount = compute(() => {
+    const arr =
+      (chosenProducts && chosenProducts.value) || chosenProducts || [];
+    return Array.isArray(arr) ? arr.length : 0;
+  });
 
-    // TODO FOR THE CHALLENGE: Implement the computation logic for the productCount
-    // const productCount;
+  const updateProducts = (products) => {
+    setAtom(chosenProducts, [...products]);
+  };
 
-    const updateStores = (stores) => {
-        setAtom(chosenStores, [...stores]);
-    };
+  const updatePromotionName = (name) => {
+    setAtom(promotionName, name);
+  };
 
-    const updatePromotionName = (name) => {
-        // TODO FOR THE CHALLENGE: Implement a state change function for updating the product name
-    };
-
-    // Return an object that defines the public API of promotionStateManager
-    return {
-      promotionName,
+  const removeProduct = (productId) => {
+    const arr =
+      (chosenProducts && chosenProducts.value) || chosenProducts || [];
+    setAtom(
       chosenProducts,
-      setProduct,
-      removeProduct,
-      updateProducts,
-      isProductSelected,
-      getProductDiscount,
-      productCount,
-      chosenStores,
-      updateStores,
-      updatePromotionName
-    };
-  },
-);
+      arr.filter((p) => p.productId !== productId)
+    );
+  };
+
+  const isProductSelected = (productId) => {
+    const arr =
+      (chosenProducts && chosenProducts.value) || chosenProducts || [];
+    return arr.some((p) => p.productId === productId);
+  };
+
+  const getProductDiscount = (productId) => {
+    const arr =
+      (chosenProducts && chosenProducts.value) || chosenProducts || [];
+    const foundProduct = arr.find((p) => p.productId === productId);
+    return foundProduct ? foundProduct.discountPercent || 0 : 0;
+  };
+
+  const updateStores = (stores) => {
+    setAtom(chosenStores, [...stores]);
+  };
+
+  // This returns the "Bucket" that every other file will share
+  return {
+    promotionName,
+    chosenProducts,
+    chosenStores,
+    setProduct,
+    removeProduct,
+    isProductSelected,
+    getProductDiscount,
+    productCount,
+    updateProducts,
+    updateStores,
+    updatePromotionName
+  };
+});
 
 export default promotionStateManager;

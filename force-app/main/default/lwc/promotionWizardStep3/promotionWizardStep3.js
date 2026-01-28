@@ -1,173 +1,231 @@
-import { LightningElement, api, track } from 'lwc';
-import { fromContext } from '@lwc/state';
-import promotionStateManager from 'c/promotionStateManager';
-import getRetailStores from '@salesforce/apex/PromotionCreatorCtrl.getRetailStores';
+import { LightningElement, api, track } from "lwc";
+import { fromContext } from "@lwc/state";
+import promotionStateManager from "c/promotionStateManager";
+import getRetailStores from "@salesforce/apex/PromotionCreatorCtrl.getRetailStores";
 
 export default class PromotionWizardStep3 extends LightningElement {
-    promotionState = fromContext(promotionStateManager);
+  promotionState;
 
-    @api recordId; // Account Id passed from parent wizard
+  @api recordId; // Account Id passed from parent wizard
 
-    @track stores = [];
-    @track selectedStoreIds = new Set();
-    
-    isLoading = true;
-    error = null;
+  @track stores = [];
+  @track selectedStoreIds = new Set();
 
-    connectedCallback() {
-        this.restoreSelectionsFromState();
-        this.loadStores();
+  isLoading = true;
+  error = null;
+
+  connectedCallback() {
+    // Try to obtain state context; fallback to factory when not available
+    try {
+      if (typeof fromContext === "function") {
+        this.promotionState = fromContext(this, promotionStateManager);
+      } else {
+        this.promotionState = promotionStateManager();
+      }
+    } catch (e) {
+      this.promotionState = promotionStateManager();
+      // eslint-disable-next-line no-console
+      console.warn(
+        "fromContext not available; using fallback state instance.",
+        e
+      );
     }
 
-    restoreSelectionsFromState() {
-        const stateStores = this.promotionState?.value?.chosenStores || [];
-        stateStores.forEach(store => {
-            this.selectedStoreIds.add(store.storeId);
-        });
+    this.restoreSelectionsFromState();
+    this.loadStores();
+  }
+
+  restoreSelectionsFromState() {
+    const stateStores = this.promotionState?.value?.chosenStores?.value || [];
+    stateStores.forEach((store) => {
+      this.selectedStoreIds.add(store.storeId);
+    });
+  }
+
+  async loadStores() {
+    this.isLoading = true;
+    this.error = null;
+
+    try {
+      const result = await getRetailStores({
+        accountId: this.recordId
+      });
+
+      this.stores = result.map((store) => ({
+        id: store.Id,
+        name: store.Name,
+        locationGroup: store.RetailLocationGroup?.Name || "N/A",
+        isSelected: this.selectedStoreIds.has(store.Id)
+      }));
+    } catch (err) {
+      this.error = err.body?.message || "Failed to load stores";
+      console.error("Error loading stores:", err);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  handleCheckboxChange(event) {
+    const storeId = event.target.dataset.id;
+    const isChecked = event.target.checked;
+
+    if (isChecked) {
+      this.selectedStoreIds.add(storeId);
+    } else {
+      this.selectedStoreIds.delete(storeId);
     }
 
-    async loadStores() {
-        this.isLoading = true;
-        this.error = null;
+    // Update the stores array to reflect selection change
+    this.stores = this.stores.map((s) => {
+      if (s.id === storeId) {
+        return { ...s, isSelected: isChecked };
+      }
+      return s;
+    });
+  }
 
-        try {
-            const result = await getRetailStores({
-                accountId: this.recordId
-            });
+  handleSelectAll(event) {
+    const isChecked = event.target.checked;
 
-            this.stores = result.map(store => ({
-                id: store.Id,
-                name: store.Name,
-                locationGroup: store.RetailLocationGroup?.Name || 'N/A',
-                isSelected: this.selectedStoreIds.has(store.Id)
-            }));
-        } catch (err) {
-            this.error = err.body?.message || 'Failed to load stores';
-            console.error('Error loading stores:', err);
-        } finally {
-            this.isLoading = false;
-        }
+    if (isChecked) {
+      this.stores.forEach((store) => {
+        this.selectedStoreIds.add(store.id);
+      });
+    } else {
+      this.selectedStoreIds.clear();
     }
 
-    handleCheckboxChange(event) {
-        const storeId = event.target.dataset.id;
-        const isChecked = event.target.checked;
-        const store = this.stores.find(s => s.id === storeId);
+    this.stores = this.stores.map((s) => ({
+      ...s,
+      isSelected: isChecked
+    }));
+  }
 
-        if (isChecked) {
-            this.selectedStoreIds.add(storeId);
-        } else {
-            this.selectedStoreIds.delete(storeId);
-        }
+  get hasStores() {
+    return this.stores && this.stores.length > 0;
+  }
 
-        // Update the stores array to reflect selection change
-        this.stores = this.stores.map(s => {
-            if (s.id === storeId) {
-                return { ...s, isSelected: isChecked };
-            }
-            return s;
-        });
+  get noStores() {
+    return !this.hasStores;
+  }
+
+  get notLoading() {
+    return !this.isLoading;
+  }
+
+  get selectedCount() {
+    return this.selectedStoreIds.size;
+  }
+
+  get totalCount() {
+    return this.stores.length;
+  }
+
+  get hasSelectedStores() {
+    return this.selectedCount > 0;
+  }
+
+  get allSelected() {
+    return (
+      this.stores.length > 0 &&
+      this.selectedStoreIds.size === this.stores.length
+    );
+  }
+
+  get someSelected() {
+    return (
+      this.selectedStoreIds.size > 0 &&
+      this.selectedStoreIds.size < this.stores.length
+    );
+  }
+
+  get selectedStoresList() {
+    return this.stores.filter((s) => this.selectedStoreIds.has(s.id));
+  }
+
+  // Get summary data from state for display
+  get promotionName() {
+    return (
+      this.promotionState?.value?.promotionName?.value || "Untitled Promotion"
+    );
+  }
+
+  get selectedProducts() {
+    return this.promotionState?.value?.chosenProducts?.value || [];
+  }
+
+  get hasSelectedProducts() {
+    return this.selectedProducts.length > 0;
+  }
+
+  @api
+  allValid() {
+    // Check if at least one store is selected
+    if (this.selectedStoreIds.size === 0) {
+      this.error = "Please select at least one store.";
+      return false;
     }
 
-    handleSelectAll(event) {
-        const isChecked = event.target.checked;
-        
-        if (isChecked) {
-            this.stores.forEach(store => {
-                this.selectedStoreIds.add(store.id);
-            });
-        } else {
-            this.selectedStoreIds.clear();
-        }
+    // Save selections to state
+    const storesArray = this.stores
+      .filter((s) => this.selectedStoreIds.has(s.id))
+      .map((s) => ({
+        storeId: s.id,
+        storeName: s.name,
+        locationGroup: s.locationGroup
+      }));
 
-        this.stores = this.stores.map(s => ({
-            ...s,
-            isSelected: isChecked
-        }));
+    const updateStoresFn =
+      this.promotionState?.value?.updateStores ||
+      this.promotionState?.updateStores;
+    if (typeof updateStoresFn === "function") {
+      updateStoresFn(storesArray);
     }
 
-    get hasStores() {
-        return this.stores && this.stores.length > 0;
-    }
+    this.error = null;
+    return true;
+  }
 
-    get noStores() {
-        return !this.hasStores;
-    }
+  /**
+   * Test helpers
+   */
+  @api
+  setStores(stores) {
+    this.stores = stores.map((s) => ({
+      ...s,
+      isSelected: this.selectedStoreIds.has(s.id)
+    }));
+  }
 
-    get notLoading() {
-        return !this.isLoading;
-    }
+  @api
+  setSelectedStores(storeIds) {
+    this.selectedStoreIds = new Set(storeIds);
+  }
 
-    get selectedCount() {
-        return this.selectedStoreIds.size;
-    }
+  @api
+  getSelectedStoresList() {
+    return this.selectedStoresList;
+  }
 
-    get totalCount() {
-        return this.stores.length;
-    }
+  @api
+  getPromotionData() {
+    return {
+      promotionName: this.promotionName,
+      products: this.selectedProducts,
+      stores: this.selectedStoresList.map((s) => ({
+        storeId: s.id,
+        storeName: s.name,
+        locationGroup: s.locationGroup
+      }))
+    };
+  }
 
-    get hasSelectedStores() {
-        return this.selectedCount > 0;
-    }
-
-    get allSelected() {
-        return this.stores.length > 0 && this.selectedStoreIds.size === this.stores.length;
-    }
-
-    get someSelected() {
-        return this.selectedStoreIds.size > 0 && this.selectedStoreIds.size < this.stores.length;
-    }
-
-    get selectedStoresList() {
-        return this.stores.filter(s => this.selectedStoreIds.has(s.id));
-    }
-
-    // Get summary data from state for display
-    get promotionName() {
-        return this.promotionState?.value?.promotionName || 'Untitled Promotion';
-    }
-
-    get selectedProducts() {
-        return this.promotionState?.value?.chosenProducts || [];
-    }
-
-    get hasSelectedProducts() {
-        return this.selectedProducts.length > 0;
-    }
-
-    @api
-    allValid() {
-        // Check if at least one store is selected
-        if (this.selectedStoreIds.size === 0) {
-            this.error = 'Please select at least one store.';
-            return false;
-        }
-
-        // Save selections to state
-        const storesArray = this.stores
-            .filter(s => this.selectedStoreIds.has(s.id))
-            .map(s => ({
-                storeId: s.id,
-                storeName: s.name,
-                locationGroup: s.locationGroup
-            }));
-        
-        this.promotionState.value.updateStores(storesArray);
-        
-        this.error = null;
-        return true;
-    }
-
-    @api
-    getPromotionData() {
-        return {
-            promotionName: this.promotionName,
-            products: this.selectedProducts,
-            stores: this.selectedStoresList.map(s => ({
-                storeId: s.id,
-                storeName: s.name,
-                locationGroup: s.locationGroup
-            }))
-        };
-    }
+  @api
+  getChosenStoresFromState() {
+    return (
+      this.promotionState?.value?.chosenStores?.value ||
+      this.promotionState?.chosenStores ||
+      []
+    );
+  }
 }

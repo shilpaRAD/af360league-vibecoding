@@ -1,56 +1,74 @@
 <template>
-    <lightning-card title={stepTitle}>
-        <!-- Progress Indicator -->
-        <div class="slds-p-horizontal_medium slds-p-top_small">
-            <lightning-progress-indicator current-step={currentStepForProgress} type="path" variant="base">
-                <lightning-progress-step label="Details" value="1"></lightning-progress-step>
-                <lightning-progress-step label="Products" value="2"></lightning-progress-step>
-                <lightning-progress-step label="Stores" value="3"></lightning-progress-step>
-            </lightning-progress-indicator>
-        </div>
+  <lightning-card title={stepTitle}>
+    <!-- Progress Indicator -->
+    <div class="slds-p-horizontal_medium slds-p-top_small">
+      <lightning-progress-indicator
+        current-step={currentStepForProgress}
+        type="path"
+        variant="base"
+      >
+        <lightning-progress-step
+          label="Details"
+          value="1"
+        ></lightning-progress-step>
+        <lightning-progress-step
+          label="Products"
+          value="2"
+        ></lightning-progress-step>
+        <lightning-progress-step
+          label="Stores"
+          value="3"
+        ></lightning-progress-step>
+      </lightning-progress-indicator>
+    </div>
 
-        <div class="slds-p-around_medium">
-            <template lwc:if={isStep1}>
-                <c-promotion-wizard-step1></c-promotion-wizard-step1>
-            </template>
-            <template lwc:elseif={isStep2}>
-                <c-promotion-wizard-step2></c-promotion-wizard-step2>
-            </template>
-            <template lwc:elseif={isStep3}>
-                <c-promotion-wizard-step3 record-id={recordId}></c-promotion-wizard-step3>
-            </template>
-        </div>
+    <div class="slds-p-around_medium">
+      <template lwc:if={isStep1}>
+        <c-promotion-wizard-step1></c-promotion-wizard-step1>
+      </template>
+      <template lwc:elseif={isStep2}>
+        <c-promotion-wizard-step2></c-promotion-wizard-step2>
+      </template>
+      <template lwc:elseif={isStep3}>
+        <c-promotion-wizard-step3
+          record-id={recordId}
+        ></c-promotion-wizard-step3>
+      </template>
+    </div>
 
-        <div slot="footer" class="slds-grid slds-grid_align-spread">
-            <div>
-                <template lwc:if={showPrevious}>
-                    <lightning-button 
-                        label="Previous" 
-                        onclick={handlePrevious}
-                        icon-name="utility:chevronleft">
-                    </lightning-button>
-                </template>
-            </div>
-            <div>
-                <template lwc:if={showNext}>
-                    <lightning-button 
-                        label="Next" 
-                        variant="brand"
-                        onclick={handleNext}
-                        icon-name="utility:chevronright"
-                        icon-position="right">
-                    </lightning-button>
-                </template>
-                <template lwc:if={showFinish}>
-                    <lightning-button 
-                        label={saveButtonLabel}
-                        variant="brand"
-                        onclick={handleSave}
-                        icon-name="utility:check"
-                        disabled={isSaveDisabled}>
-                    </lightning-button>
-                </template>
-            </div>
-        </div>
-    </lightning-card>
+    <div slot="footer" class="slds-grid slds-grid_align-spread">
+      <div>
+        <template lwc:if={showPrevious}>
+          <lightning-button
+            label="Previous"
+            onclick={handlePrevious}
+            icon-name="utility:chevronleft"
+          >
+          </lightning-button>
+        </template>
+      </div>
+      <div>
+        <template lwc:if={showNext}>
+          <lightning-button
+            label="Next"
+            variant="brand"
+            onclick={handleNext}
+            icon-name="utility:chevronright"
+            icon-position="right"
+          >
+          </lightning-button>
+        </template>
+        <template lwc:if={showFinish}>
+          <lightning-button
+            label={saveButtonLabel}
+            variant="brand"
+            onclick={handleSave}
+            icon-name="utility:check"
+            disabled={isSaveDisabled}
+          >
+          </lightning-button>
+        </template>
+      </div>
+    </div>
+  </lightning-card>
 </template>

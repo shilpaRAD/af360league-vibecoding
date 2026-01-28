@@ -1,5 +1,4 @@
 public with sharing class PromotionCreatorCtrl {
-
   @AuraEnabled
   public static PagedResult getProducts(
     String type,
@@ -7,31 +6,90 @@ public with sharing class PromotionCreatorCtrl {
     string locatorParam
   ) {
     Integer pageSize = 5;
-    // TODO FOR THE CHALLENGE: 
+    // TODO FOR THE CHALLENGE:
     // If the cursor locator is being sent from the parameter, then deserialize the cursor and use the same.
     // If the locator is NOT sent from the parameter, then create a new cursor.
     // Create a cursor to get Id, Name,and cgcloud__Category__c from the Product2 object
-    
-    Database.Cursor locator;
 
-    integer position = (pageNumber - 1) * pageSize;
+    // Build the base SOQL for products
+    String baseQuery = 'SELECT Id, Name, cgcloud__Category__c FROM Product2 ORDER BY Name';
 
-    // TODO FOR THE CHALLENGE: 
+    // Default position from pageNumber
+    Integer position = (pageNumber - 1) * pageSize;
+
+    // If caller provided a locatorParam, try to deserialize and use its position instead
+    if (!String.isBlank(locatorParam)) {
+      try {
+        Map<String, Object> locatorMap = (Map<String, Object>) JSON.deserializeUntyped(
+          locatorParam
+        );
+        if (locatorMap != null && locatorMap.containsKey('position')) {
+          position = Integer.valueOf(
+            String.valueOf(locatorMap.get('position'))
+          );
+        }
+      } catch (Exception ex) {
+        // ignore and fall back to pageNumber-derived position
+      }
+    }
+
+    // Create a new cursor for the base query
+    Database.Cursor cursor = Database.getCursor(baseQuery);
+    Database.Cursor locator; // keep original variable name referenced in TODOs for clarity
+
+    // Compute total and determine how many to fetch
+    Integer total = 0;
+    try {
+      total = cursor.getNumRecords();
+    } catch (Exception ex) {
+      // As a safe fallback, use countQuery if cursor.getNumRecords() fails
+      total = Database.countQuery('SELECT count() FROM Product2');
+    }
+
+    // TODO FOR THE CHALLENGE:
     // Define the number of records to be fetched - it is the lesser value either the page size, or the remaining records
-    // integer countToFetch = 
+    // integer countToFetch =
+
+    Integer remaining = Math.max(0, total - position);
+    Integer countToFetch = remaining > pageSize ? pageSize : remaining;
 
     PagedResult result = new PagedResult();
     result.pageSize = pageSize;
     result.pageNumber = pageNumber;
 
     // TODO FOR THE CHALLENGE: Fetch the total number of records, and assign the value
-    // result.totalItemCount = 
-    
+    // result.totalItemCount =
+    result.totalItemCount = total;
+
     // TODO FOR THE CHALLENGE: Fetch the records and store it in result.records
-    // result.records = 
+    // result.records =
+
+    // Fetch the records (if any)
+    List<Product2> fetched = new List<Product2>();
+    if (countToFetch > 0) {
+      try {
+        fetched = (List<Product2>) cursor.fetch(position, countToFetch);
+      } catch (Exception ex) {
+        // If cursor.fetch fails, fall back to a LIMIT/OFFSET query
+        Integer offset = Math.max(0, position);
+        fetched = Database.query(
+          baseQuery + ' LIMIT ' + countToFetch + ' OFFSET ' + offset
+        );
+      }
+    }
+
+    result.records = fetched;
 
     // TODO FOR THE CHALLENGE: send the locator to LWC
-    // result.locator = 
+    // result.locator =
+    // Build a simple locator that encodes the next position (so LWC can pass it back)
+    Integer nextPosition = position + countToFetch;
+    Map<String, Object> outLocator = new Map<String, Object>{
+      'position' => nextPosition,
+      'pageSize' => pageSize,
+      'total' => total
+    };
+    result.locator = JSON.serialize(outLocator);
 
     return result;
   }

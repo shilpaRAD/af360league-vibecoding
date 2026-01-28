@@ -1,163 +1,209 @@
 <template>
-    <div class="slds-m-bottom_medium">
-        <h2 class="slds-text-heading_medium slds-m-bottom_small">Select Products &mp; Set Discounts</h2>
-        <p class="slds-text-body_regular slds-text-color_weak">
-            Choose products for this promotion and set the discount percentage for each.
-        </p>
+  <div class="slds-m-bottom_medium">
+    <h2 class="slds-text-heading_medium slds-m-bottom_small">
+      Select Products &mp; Set Discounts
+    </h2>
+    <p class="slds-text-body_regular slds-text-color_weak">
+      Choose products for this promotion and set the discount percentage for
+      each.
+    </p>
+  </div>
+
+  <!-- Error Message -->
+  <template lwc:if={error}>
+    <div
+      class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium"
+      role="alert"
+    >
+      <span class="slds-assistive-text">error</span>
+      <span
+        class="slds-icon_container slds-icon-utility-error slds-m-right_x-small"
+      >
+        <lightning-icon
+          icon-name="utility:error"
+          alternative-text="Error"
+          size="x-small"
+          variant="inverse"
+        ></lightning-icon>
+      </span>
+      <h2>{error}</h2>
+    </div>
+  </template>
+
+  <!-- Loading Spinner -->
+  <template lwc:if={isLoading}>
+    <div class="slds-align_absolute-center slds-p-around_large">
+      <lightning-spinner
+        alternative-text="Loading products..."
+        size="medium"
+      ></lightning-spinner>
+    </div>
+  </template>
+
+  <template lwc:if={hasProducts}>
+    <!-- Selection Summary -->
+    <div
+      class="slds-box slds-box_x-small slds-theme_shade slds-m-bottom_medium"
+    >
+      <p class="slds-text-body_regular">
+        <lightning-icon
+          icon-name="utility:check"
+          size="x-small"
+          class="slds-m-right_x-small"
+        ></lightning-icon>
+        <strong>{selectedCount}</strong> product(s) selected
+      </p>
     </div>
 
-    <!-- Error Message -->
-    <template lwc:if={error}>
-        <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium" role="alert">
-            <span class="slds-assistive-text">error</span>
-            <span class="slds-icon_container slds-icon-utility-error slds-m-right_x-small">
-                <lightning-icon icon-name="utility:error" alternative-text="Error" size="x-small" variant="inverse"></lightning-icon>
-            </span>
-            <h2>{error}</h2>
-        </div>
-    </template>
-
-    <!-- Loading Spinner -->
-    <template lwc:if={isLoading}>
-        <div class="slds-align_absolute-center slds-p-around_large">
-            <lightning-spinner alternative-text="Loading products..." size="medium"></lightning-spinner>
-        </div>
-    </template>
-
-    <template lwc:if={hasProducts}>
-        <!-- Selection Summary -->
-        <div class="slds-box slds-box_x-small slds-theme_shade slds-m-bottom_medium">
-            <p class="slds-text-body_regular">
-                <lightning-icon icon-name="utility:check" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-                <strong>{selectedCount}</strong> product(s) selected
-            </p>
-        </div>
-
-        <!-- Products Table -->
-        <div class="slds-scrollable_x">
-            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
-                <thead>
-                    <tr class="slds-line-height_reset">
-                        <th class="" scope="col" style="width: 50px;">
-                            <div class="slds-truncate" title="Select">Select</div>
-                        </th>
-                        <th class="" scope="col">
-                            <div class="slds-truncate" title="Product Name">Product Name</div>
-                        </th>
-                        <th class="" scope="col">
-                            <div class="slds-truncate" title="Category">Category</div>
-                        </th>
-                        <th class="" scope="col" style="width: 150px;">
-                            <div class="slds-truncate" title="Discount %">Discount %</div>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template for:each={products} for:item="product">
-                        <tr key={product.id}>
-                            <td data-label="Select">
-                                <lightning-input
-                                    type="checkbox"
-                                    data-id={product.id}
-                                    checked={product.isSelected}
-                                    onchange={handleCheckboxChange}
-                                    variant="label-hidden"
-                                    label="Select product">
-                                </lightning-input>
-                            </td>
-                            <td data-label="Product Name">
-                                <div class="slds-truncate" title={product.name}>{product.name}</div>
-                            </td>
-                            <td data-label="Category">
-                                <div class="slds-truncate" title={product.category}>{product.category}</div>
-                            </td>
-                            <td data-label="Discount %">
-                                <lightning-input
-                                    type="number"
-                                    data-id={product.id}
-                                    value={product.discountPercent}
-                                    min="0"
-                                    max="100"
-                                    step="1"
-                                    onchange={handleDiscountChange}
-                                    variant="label-hidden"
-                                    label="Discount percentage"
-                                    disabled={product.isDisabled}
-                                    placeholder="0">
-                                </lightning-input>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination Controls -->
-        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-top_medium slds-p-around_small slds-theme_shade">
-            <div class="slds-col">
-                <span class="slds-text-body_small">{pageInfo}</span>
-            </div>
-            <div class="slds-col slds-grid slds-grid_align-end">
-                <lightning-button-group>
-                    <lightning-button-icon
-                        icon-name="utility:jump_to_left"
-                        alternative-text="First Page"
-                        title="First Page"
-                        onclick={handleFirstPage}
-                        disabled={noPreviousPage}>
-                    </lightning-button-icon>
-                    <lightning-button-icon
-                        icon-name="utility:chevronleft"
-                        alternative-text="Previous Page"
-                        title="Previous Page"
-                        onclick={handlePreviousPage}
-                        disabled={noPreviousPage}>
-                    </lightning-button-icon>
-                    <lightning-button-icon
-                        icon-name="utility:chevronright"
-                        alternative-text="Next Page"
-                        title="Next Page"
-                        onclick={handleNextPage}
-                        disabled={noNextPage}>
-                    </lightning-button-icon>
-                    <lightning-button-icon
-                        icon-name="utility:jump_to_right"
-                        alternative-text="Last Page"
-                        title="Last Page"
-                        onclick={handleLastPage}
-                        disabled={noNextPage}>
-                    </lightning-button-icon>
-                </lightning-button-group>
-            </div>
-        </div>
-    </template>
-
-    <!-- No Products Message -->
-    <template lwc:if={noProducts}>
-        <template lwc:if={notLoading}>
-            <div class="slds-illustration slds-illustration_small slds-p-around_large slds-align_absolute-center">
-                <div class="slds-text-longform">
-                    <h3 class="slds-text-heading_medium">No Products Found</h3>
-                    <p class="slds-text-body_regular">There are no products available for this promotion.</p>
+    <!-- Products Table -->
+    <div class="slds-scrollable_x">
+      <table
+        class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped"
+      >
+        <thead>
+          <tr class="slds-line-height_reset">
+            <th class="" scope="col" style="width: 50px">
+              <div class="slds-truncate" title="Select">Select</div>
+            </th>
+            <th class="" scope="col">
+              <div class="slds-truncate" title="Product Name">Product Name</div>
+            </th>
+            <th class="" scope="col">
+              <div class="slds-truncate" title="Category">Category</div>
+            </th>
+            <th class="" scope="col" style="width: 150px">
+              <div class="slds-truncate" title="Discount %">Discount %</div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <template for:each={products} for:item="product">
+            <tr key={product.id}>
+              <td data-label="Select">
+                <lightning-input
+                  type="checkbox"
+                  data-id={product.id}
+                  checked={product.isSelected}
+                  onchange={handleCheckboxChange}
+                  variant="label-hidden"
+                  label="Select product"
+                >
+                </lightning-input>
+              </td>
+              <td data-label="Product Name">
+                <div class="slds-truncate" title={product.name}>
+                  {product.name}
                 </div>
-            </div>
-        </template>
-    </template>
+              </td>
+              <td data-label="Category">
+                <div class="slds-truncate" title={product.category}>
+                  {product.category}
+                </div>
+              </td>
+              <td data-label="Discount %">
+                <lightning-input
+                  type="number"
+                  data-id={product.id}
+                  value={product.discountPercent}
+                  min="0"
+                  max="100"
+                  step="1"
+                  onchange={handleDiscountChange}
+                  variant="label-hidden"
+                  label="Discount percentage"
+                  disabled={product.isDisabled}
+                  placeholder="0"
+                >
+                </lightning-input>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
 
-    <!-- Selected Products Summary -->
-    <template lwc:if={hasSelectedProducts}>
-        <div class="slds-m-top_large">
-            <h3 class="slds-text-heading_small slds-m-bottom_small">Selected Products Summary</h3>
-            <ul class="slds-has-dividers_bottom-space">
-                <template for:each={selectedProductsList} for:item="selectedProduct">
-                    <li key={selectedProduct.productId} class="slds-item">
-                        <div class="slds-grid slds-grid_align-spread">
-                            <span class="slds-text-body_regular">{selectedProduct.productName}</span>
-                            <span class="slds-badge slds-badge_inverse">{selectedProduct.discountPercent}% off</span>
-                        </div>
-                    </li>
-                </template>
-            </ul>
+    <!-- Pagination Controls -->
+    <div
+      class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-top_medium slds-p-around_small slds-theme_shade"
+    >
+      <div class="slds-col">
+        <span class="slds-text-body_small">{pageInfo}</span>
+      </div>
+      <div class="slds-col slds-grid slds-grid_align-end">
+        <lightning-button-group>
+          <lightning-button-icon
+            icon-name="utility:jump_to_left"
+            alternative-text="First Page"
+            title="First Page"
+            onclick={handleFirstPage}
+            disabled={noPreviousPage}
+          >
+          </lightning-button-icon>
+          <lightning-button-icon
+            icon-name="utility:chevronleft"
+            alternative-text="Previous Page"
+            title="Previous Page"
+            onclick={handlePreviousPage}
+            disabled={noPreviousPage}
+          >
+          </lightning-button-icon>
+          <lightning-button-icon
+            icon-name="utility:chevronright"
+            alternative-text="Next Page"
+            title="Next Page"
+            onclick={handleNextPage}
+            disabled={noNextPage}
+          >
+          </lightning-button-icon>
+          <lightning-button-icon
+            icon-name="utility:jump_to_right"
+            alternative-text="Last Page"
+            title="Last Page"
+            onclick={handleLastPage}
+            disabled={noNextPage}
+          >
+          </lightning-button-icon>
+        </lightning-button-group>
+      </div>
+    </div>
+  </template>
+
+  <!-- No Products Message -->
+  <template lwc:if={noProducts}>
+    <template lwc:if={notLoading}>
+      <div
+        class="slds-illustration slds-illustration_small slds-p-around_large slds-align_absolute-center"
+      >
+        <div class="slds-text-longform">
+          <h3 class="slds-text-heading_medium">No Products Found</h3>
+          <p class="slds-text-body_regular">
+            There are no products available for this promotion.
+          </p>
         </div>
+      </div>
     </template>
+  </template>
+
+  <!-- Selected Products Summary -->
+  <template lwc:if={hasSelectedProducts}>
+    <div class="slds-m-top_large">
+      <h3 class="slds-text-heading_small slds-m-bottom_small">
+        Selected Products Summary
+      </h3>
+      <ul class="slds-has-dividers_bottom-space">
+        <template for:each={selectedProductsList} for:item="selectedProduct">
+          <li key={selectedProduct.productId} class="slds-item">
+            <div class="slds-grid slds-grid_align-spread">
+              <span class="slds-text-body_regular"
+                >{selectedProduct.productName}</span
+              >
+              <span class="slds-badge slds-badge_inverse"
+                >{selectedProduct.discountPercent}% off</span
+              >
+            </div>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </template>
 </template>

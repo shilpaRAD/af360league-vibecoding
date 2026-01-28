@@ -1,147 +1,204 @@
 <template>
-    <div class="slds-m-bottom_medium">
-        <h2 class="slds-text-heading_medium slds-m-bottom_small">Select Applicable Stores</h2>
-        <p class="slds-text-body_regular slds-text-color_weak">
-            Choose the retail stores where this promotion will be applicable.
+  <div class="slds-m-bottom_medium">
+    <h2 class="slds-text-heading_medium slds-m-bottom_small">
+      Select Applicable Stores
+    </h2>
+    <p class="slds-text-body_regular slds-text-color_weak">
+      Choose the retail stores where this promotion will be applicable.
+    </p>
+  </div>
+
+  <!-- Promotion Summary Card -->
+  <div
+    class="slds-box slds-box_x-small slds-theme_default slds-m-bottom_medium"
+  >
+    <div class="slds-grid slds-wrap slds-gutters_small">
+      <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+        <p class="slds-text-title_caps slds-m-bottom_xx-small">
+          Promotion Name
         </p>
+        <p class="slds-text-body_regular slds-text-title">{promotionName}</p>
+      </div>
+      <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+        <p class="slds-text-title_caps slds-m-bottom_xx-small">
+          Products Selected
+        </p>
+        <p class="slds-text-body_regular">
+          <template lwc:if={hasSelectedProducts}>
+            <template for:each={selectedProducts} for:item="product">
+              <span
+                key={product.productId}
+                class="slds-badge slds-badge_lightest slds-m-right_xx-small slds-m-bottom_xx-small"
+              >
+                {product.productName} ({product.discountPercent}% off)
+              </span>
+            </template>
+          </template>
+          <template lwc:else>
+            <span class="slds-text-color_weak">No products selected</span>
+          </template>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Message -->
+  <template lwc:if={error}>
+    <div
+      class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium"
+      role="alert"
+    >
+      <span class="slds-assistive-text">error</span>
+      <span
+        class="slds-icon_container slds-icon-utility-error slds-m-right_x-small"
+      >
+        <lightning-icon
+          icon-name="utility:error"
+          alternative-text="Error"
+          size="x-small"
+          variant="inverse"
+        ></lightning-icon>
+      </span>
+      <h2>{error}</h2>
+    </div>
+  </template>
+
+  <!-- Loading Spinner -->
+  <template lwc:if={isLoading}>
+    <div class="slds-align_absolute-center slds-p-around_large">
+      <lightning-spinner
+        alternative-text="Loading stores..."
+        size="medium"
+      ></lightning-spinner>
+    </div>
+  </template>
+
+  <template lwc:if={hasStores}>
+    <!-- Selection Summary -->
+    <div
+      class="slds-box slds-box_x-small slds-theme_shade slds-m-bottom_medium"
+    >
+      <div
+        class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center"
+      >
+        <p class="slds-text-body_regular">
+          <lightning-icon
+            icon-name="utility:store"
+            size="x-small"
+            class="slds-m-right_x-small"
+          ></lightning-icon>
+          <strong>{selectedCount}</strong> of
+          <strong>{totalCount}</strong> store(s) selected
+        </p>
+      </div>
     </div>
 
-    <!-- Promotion Summary Card -->
-    <div class="slds-box slds-box_x-small slds-theme_default slds-m-bottom_medium">
-        <div class="slds-grid slds-wrap slds-gutters_small">
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                <p class="slds-text-title_caps slds-m-bottom_xx-small">Promotion Name</p>
-                <p class="slds-text-body_regular slds-text-title">{promotionName}</p>
-            </div>
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                <p class="slds-text-title_caps slds-m-bottom_xx-small">Products Selected</p>
-                <p class="slds-text-body_regular">
-                    <template lwc:if={hasSelectedProducts}>
-                        <template for:each={selectedProducts} for:item="product">
-                            <span key={product.productId} class="slds-badge slds-badge_lightest slds-m-right_xx-small slds-m-bottom_xx-small">
-                                {product.productName} ({product.discountPercent}% off)
-                            </span>
-                        </template>
-                    </template>
-                    <template lwc:else>
-                        <span class="slds-text-color_weak">No products selected</span>
-                    </template>
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <!-- Error Message -->
-    <template lwc:if={error}>
-        <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_medium" role="alert">
-            <span class="slds-assistive-text">error</span>
-            <span class="slds-icon_container slds-icon-utility-error slds-m-right_x-small">
-                <lightning-icon icon-name="utility:error" alternative-text="Error" size="x-small" variant="inverse"></lightning-icon>
-            </span>
-            <h2>{error}</h2>
-        </div>
-    </template>
-
-    <!-- Loading Spinner -->
-    <template lwc:if={isLoading}>
-        <div class="slds-align_absolute-center slds-p-around_large">
-            <lightning-spinner alternative-text="Loading stores..." size="medium"></lightning-spinner>
-        </div>
-    </template>
-
-    <template lwc:if={hasStores}>
-        <!-- Selection Summary -->
-        <div class="slds-box slds-box_x-small slds-theme_shade slds-m-bottom_medium">
-            <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
-                <p class="slds-text-body_regular">
-                    <lightning-icon icon-name="utility:store" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-                    <strong>{selectedCount}</strong> of <strong>{totalCount}</strong> store(s) selected
-                </p>
-            </div>
-        </div>
-
-        <!-- Stores Table -->
-        <div class="slds-scrollable_x">
-            <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped">
-                <thead>
-                    <tr class="slds-line-height_reset">
-                        <th class="" scope="col" style="width: 50px;">
-                            <div class="slds-truncate" title="Select All">
-                                <lightning-input
-                                    type="checkbox"
-                                    checked={allSelected}
-                                    indeterminate={someSelected}
-                                    onchange={handleSelectAll}
-                                    variant="label-hidden"
-                                    label="Select all stores">
-                                </lightning-input>
-                            </div>
-                        </th>
-                        <th class="" scope="col">
-                            <div class="slds-truncate" title="Store Name">Store Name</div>
-                        </th>
-                        <th class="" scope="col">
-                            <div class="slds-truncate" title="Location Group">Location Group</div>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template for:each={stores} for:item="store">
-                        <tr key={store.id}>
-                            <td data-label="Select">
-                                <lightning-input
-                                    type="checkbox"
-                                    data-id={store.id}
-                                    checked={store.isSelected}
-                                    onchange={handleCheckboxChange}
-                                    variant="label-hidden"
-                                    label="Select store">
-                                </lightning-input>
-                            </td>
-                            <td data-label="Store Name">
-                                <div class="slds-truncate" title={store.name}>{store.name}</div>
-                            </td>
-                            <td data-label="Location Group">
-                                <div class="slds-truncate" title={store.locationGroup}>{store.locationGroup}</div>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
-        </div>
-    </template>
-
-    <!-- No Stores Message -->
-    <template lwc:if={noStores}>
-        <template lwc:if={notLoading}>
-            <div class="slds-illustration slds-illustration_small slds-p-around_large slds-align_absolute-center">
-                <div class="slds-text-longform">
-                    <h3 class="slds-text-heading_medium">No Stores Found</h3>
-                    <p class="slds-text-body_regular">
-                        There are no retail stores associated with this account.
-                    </p>
+    <!-- Stores Table -->
+    <div class="slds-scrollable_x">
+      <table
+        class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_striped"
+      >
+        <thead>
+          <tr class="slds-line-height_reset">
+            <th class="" scope="col" style="width: 50px">
+              <div class="slds-truncate" title="Select All">
+                <lightning-input
+                  type="checkbox"
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onchange={handleSelectAll}
+                  variant="label-hidden"
+                  label="Select all stores"
+                >
+                </lightning-input>
+              </div>
+            </th>
+            <th class="" scope="col">
+              <div class="slds-truncate" title="Store Name">Store Name</div>
+            </th>
+            <th class="" scope="col">
+              <div class="slds-truncate" title="Location Group">
+                Location Group
+              </div>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <template for:each={stores} for:item="store">
+            <tr key={store.id}>
+              <td data-label="Select">
+                <lightning-input
+                  type="checkbox"
+                  data-id={store.id}
+                  checked={store.isSelected}
+                  onchange={handleCheckboxChange}
+                  variant="label-hidden"
+                  label="Select store"
+                >
+                </lightning-input>
+              </td>
+              <td data-label="Store Name">
+                <div class="slds-truncate" title={store.name}>{store.name}</div>
+              </td>
+              <td data-label="Location Group">
+                <div class="slds-truncate" title={store.locationGroup}>
+                  {store.locationGroup}
                 </div>
-            </div>
-        </template>
-    </template>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </template>
 
-    <!-- Selected Stores Summary -->
-    <template lwc:if={hasSelectedStores}>
-        <div class="slds-m-top_large">
-            <h3 class="slds-text-heading_small slds-m-bottom_small">Selected Stores</h3>
-            <div class="slds-grid slds-wrap slds-gutters_x-small">
-                <template for:each={selectedStoresList} for:item="store">
-                    <div key={store.id} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-3 slds-m-bottom_x-small">
-                        <div class="slds-box slds-box_x-small slds-theme_shade">
-                            <p class="slds-text-body_regular slds-truncate" title={store.name}>
-                                <lightning-icon icon-name="utility:store" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
-                                {store.name}
-                            </p>
-                            <p class="slds-text-body_small slds-text-color_weak">{store.locationGroup}</p>
-                        </div>
-                    </div>
-                </template>
-            </div>
+  <!-- No Stores Message -->
+  <template lwc:if={noStores}>
+    <template lwc:if={notLoading}>
+      <div
+        class="slds-illustration slds-illustration_small slds-p-around_large slds-align_absolute-center"
+      >
+        <div class="slds-text-longform">
+          <h3 class="slds-text-heading_medium">No Stores Found</h3>
+          <p class="slds-text-body_regular">
+            There are no retail stores associated with this account.
+          </p>
         </div>
+      </div>
     </template>
+  </template>
+
+  <!-- Selected Stores Summary -->
+  <template lwc:if={hasSelectedStores}>
+    <div class="slds-m-top_large">
+      <h3 class="slds-text-heading_small slds-m-bottom_small">
+        Selected Stores
+      </h3>
+      <div class="slds-grid slds-wrap slds-gutters_x-small">
+        <template for:each={selectedStoresList} for:item="store">
+          <div
+            key={store.id}
+            class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-3 slds-m-bottom_x-small"
+          >
+            <div class="slds-box slds-box_x-small slds-theme_shade">
+              <p
+                class="slds-text-body_regular slds-truncate"
+                title={store.name}
+              >
+                <lightning-icon
+                  icon-name="utility:store"
+                  size="xx-small"
+                  class="slds-m-right_xx-small"
+                ></lightning-icon>
+                {store.name}
+              </p>
+              <p class="slds-text-body_small slds-text-color_weak">
+                {store.locationGroup}
+              </p>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </template>
 </template>

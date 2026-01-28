@@ -1,29 +1,74 @@
-import { LightningElement, api } from 'lwc';
-
-/** TODO FOR THE CHALLENGE: import the state manager, and the context modules */
+import { LightningElement, api } from "lwc";
+import promotionStateManager from "c/promotionStateManager";
+import { fromContext } from "@lwc/state";
 
 export default class PromotionWizardStep1 extends LightningElement {
-    
-    /** TODO FOR THE CHALLENGE: initialize/inherit the state from the parent */
+  /** Initialize/inherit the state from the parent (use fallback when fromContext not available) */
+  promotionState;
 
-    promotionName;
+  promotionName;
 
-    connectedCallback(){
-        this.promotionName = this.promotionState?.value?.promotionName;
+  connectedCallback() {
+    // Try to get the shared state from LWC context API; otherwise fall back to calling factory()
+    try {
+      if (typeof fromContext === "function") {
+        this.promotionState = fromContext(this, promotionStateManager);
+      } else {
+        this.promotionState = promotionStateManager();
+      }
+    } catch (e) {
+      this.promotionState = promotionStateManager();
+      // eslint-disable-next-line no-console
+      console.warn(
+        "fromContext not available; using fallback state instance.",
+        e
+      );
     }
 
-    handleChange(event) {
-        this.promotionName = event.detail.value;
+    this.promotionName =
+      this.promotionState?.value?.promotionName?.value ||
+      this.promotionState?.promotionName ||
+      "";
+  }
+
+  handleChange(event) {
+    this.promotionName = event.detail.value;
+  }
+
+  /** Test helpers */
+  @api
+  setPromotionName(name) {
+    this.promotionName = name;
+  }
+
+  @api
+  getPromotionName() {
+    return this.promotionName;
+  }
+
+  @api
+  getPromotionNameFromState() {
+    return (
+      this.promotionState?.value?.promotionName?.value ||
+      this.promotionState?.promotionName ||
+      ""
+    );
+  }
+
+  @api
+  allValid() {
+    if (this.promotionName === undefined || this.promotionName === "") {
+      return false;
     }
 
-    @api
-    allValid(){
-        if(this.promotionName === undefined || this.promotionName === ''){
-            return false;
-        }
-        
-        // TODO FOR THE CHALLENGE: Update the promotion name in the state
-        
-        return true;
+    // Update the promotion name in the state (support both context-wrapped and direct factory shapes)
+    const updatePromotionNameFn =
+      this.promotionState?.value?.updatePromotionName ||
+      this.promotionState?.updatePromotionName;
+    if (typeof updatePromotionNameFn === "function") {
+      updatePromotionNameFn(this.promotionName);
     }
+
+    return true;
+  }
 }
